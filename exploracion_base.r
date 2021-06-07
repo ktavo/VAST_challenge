@@ -19,6 +19,7 @@ library("corpus")
 library("stringr")
 library("arules")
 library("stopwords")
+library("readtext")
 
 
 ################################# Palabras en Emails ############################################################
@@ -81,14 +82,30 @@ list_of_files <- list.files(path = newsPath, recursive = TRUE,
 
 #WORLD SOURCE 787 - KINDNAPED
 
-newsDataFrame <- data.frame(matrix(ncol = 7, nrow = 845))
-colnames(newsDataFrame) <- c("filePath","fullText","source", "tittle", "publishedDate", "location", "note")
+newsDataFrame <- data.frame(matrix(ncol = 8, nrow = 845))
+colnames(newsDataFrame) <- c("filePath","fileName", "fullText","source", "tittle", "publishedDate", "location", "note")
 
 newsDataFrame$filePath <- list_of_files 
 
+newsDataFrame$fileName[1] <- toString(readtext(newsDataFrame$filePath[1]))
+newsDataFrame$fileName[1]
 
-  
+for(i in 1:nrow(newsDataFrame))
+{
+  newsDataFrame$fileName[i] = basename(newsDataFrame$filePath[i])
+  newsDataFrame$fullText[i] = readChar(newsDataFrame$filePath[i], file.info(newsDataFrame$filePath[i])$size)
+  newsDataFrame$source[i] = dirname(newsDataFrame$filePath[i])
+  newsDataFrame$source[i] <- str_remove(newsDataFrame$source[i], newsPath)
+  newsDataFrame$source[i] <- str_remove(newsDataFrame$source[i], "/")
+}
+glimpse(newsDataFrame)
 
+
+newsDataFrame$fullText[18]
+
+newsDataFrame$filePath[18]
+
+array(as.numeric(unlist(newsDataFrame$fileName[1,840]))
 ################################# END Palabras en Noticias ############################################################
 
 

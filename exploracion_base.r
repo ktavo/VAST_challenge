@@ -20,7 +20,8 @@ library("stringr")
 library("arules")
 library("stopwords")
 library("readtext")
-
+library("tm")
+library("wordcloud")
 
 ################################# Palabras en Emails ############################################################
 datosEmails <- read.csv("email headers.csv", sep = ",")
@@ -101,12 +102,71 @@ for(i in 1:nrow(newsDataFrame))
 glimpse(newsDataFrame)
 
 
-newsDataFrame$fullText[18]
 
-newsDataFrame$filePath[18]
+newsDataFrame_AllNewsToday <- newsDataFrame %>% 
+  filter(source == "World Source")
 
-array(as.numeric(unlist(newsDataFrame$fileName[1,840]))
+glimpse(newsDataFrame_AllNewsToday)
+AllNewsTodayFullText = ""
+# for(i in 1:nrow(newsDataFrame_AllNewsToday))
+# {
+#   AllNewsTodayFullText <- paste(AllNewsTodayFullText, newsDataFrame_AllNewsToday$fullText[i])
+# }
+# AllNewsTodayFullText
 ################################# END Palabras en Noticias ############################################################
+
+
+
+################################# Plot palabras en Emails ############################################################
+# AllNewsTodayFullText <- AllNewsTodayFullText %>%
+#   mutate_if(sapply(AllNewsTodayFullText, is.character), as.factor)
+# glimpse(AllNewsTodayFullText)
+# summary(AllNewsTodayFullText)
+
+newsStopWords <- c("")
+newsStopWords <- c(stopwords_en, newsStopWords)
+
+frequent_terms_news <- freq_terms(newsDataFrame_AllNewsToday$fullText, 35, stopwords = newsStopWords)
+plot(frequent_terms_news)
+
+
+
+
+# Make a vector source
+chardonnay_source <- VectorSource(newsDataFrame_AllNewsToday$fullText)
+
+# Make a volatile corpus
+chardonnay_corpus <- VCorpus(chardonnay_source)
+
+# Clean the corpus
+clean_corpus <- function(corpus){
+  corpus <- tm_map(corpus, stripWhitespace)
+  corpus <- tm_map(corpus, removePunctuation)
+  corpus <- tm_map(corpus, content_transformer(tolower))
+  corpus <- tm_map(corpus, removeWords, stopwords("en"))
+  return(corpus)
+}
+
+chardonnay_clean_corp <- clean_corpus(chardonnay_corpus)
+
+# Convert TDM to matrix
+chardonnay_tdm <- TermDocumentMatrix(chardonnay_clean_corp)
+chardonnay_m <- as.matrix(chardonnay_tdm)
+
+
+# Sum rows and frequency data frame
+chardonnay_term_freq <- rowSums(chardonnay_m)
+
+chardonnay_word_freqs <- data.frame(
+  term = names(chardonnay_term_freq),
+  num = chardonnay_term_freq
+)
+
+wordcloud(chardonnay_word_freqs$term, chardonnay_word_freqs$num,
+          max.words = 100, colors = "#52a802") #69039c 
+
+################################# END Plot palabras en Emails ############################################################
+
 
 
 

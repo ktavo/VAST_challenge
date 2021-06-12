@@ -47,11 +47,11 @@ newsPath = "E:/Git Projects/UBA_2021/Visualización/MC1/News\ Articles"
 newsSourcesPaths <- list.dirs(path = newsPath, full.names = TRUE, recursive = TRUE)
 newsSourcesPaths <- newsSourcesPaths[2:30]
 newsSourcesPaths
-newsSources <- newsSourcesPaths[2:30]
+newsSources <- newsSourcesPaths[1:29]
 
 ######################################## Map this ########################################
 
-for(i in 0:30) ###Purrr::map :(
+for(i in 0:29) ###Purrr::map :(
 {
   newsSources[i] <- str_remove(newsSources[i], newsPath)
   newsSources[i] <- str_remove(newsSources[i], "/")
@@ -102,12 +102,10 @@ for(i in 1:nrow(newsDataFrame))
 glimpse(newsDataFrame)
 
 
+newsSources
 
-newsDataFrame_AllNewsToday <- newsDataFrame %>% 
-  filter(source == "World Source")
 
-glimpse(newsDataFrame_AllNewsToday)
-AllNewsTodayFullText = ""
+#AllNewsTodayFullText = ""
 # for(i in 1:nrow(newsDataFrame_AllNewsToday))
 # {
 #   AllNewsTodayFullText <- paste(AllNewsTodayFullText, newsDataFrame_AllNewsToday$fullText[i])
@@ -117,11 +115,19 @@ AllNewsTodayFullText = ""
 
 
 
-################################# Plot palabras en Emails ############################################################
+################################# Plot palabras en Noticias ############################################################
 # AllNewsTodayFullText <- AllNewsTodayFullText %>%
 #   mutate_if(sapply(AllNewsTodayFullText, is.character), as.factor)
 # glimpse(AllNewsTodayFullText)
 # summary(AllNewsTodayFullText)
+
+
+
+newsDataFrame_AllNewsToday <- newsDataFrame %>% 
+  filter(source == "World Source")
+
+glimpse(newsDataFrame_AllNewsToday)
+
 
 newsStopWords <- c("")
 newsStopWords <- c(stopwords_en, newsStopWords)
@@ -131,12 +137,11 @@ plot(frequent_terms_news)
 
 
 
-
 # Make a vector source
-chardonnay_source <- VectorSource(newsDataFrame_AllNewsToday$fullText)
+newsSource <- VectorSource(newsDataFrame_AllNewsToday$fullText)
 
 # Make a volatile corpus
-chardonnay_corpus <- VCorpus(chardonnay_source)
+newsCorpus <- VCorpus(newsSource)
 
 # Clean the corpus
 clean_corpus <- function(corpus){
@@ -147,25 +152,25 @@ clean_corpus <- function(corpus){
   return(corpus)
 }
 
-chardonnay_clean_corp <- clean_corpus(chardonnay_corpus)
+newsCleanCorpus <- clean_corpus(newsCorpus)
 
 # Convert TDM to matrix
-chardonnay_tdm <- TermDocumentMatrix(chardonnay_clean_corp)
-chardonnay_m <- as.matrix(chardonnay_tdm)
+newsTDM <- TermDocumentMatrix(newsCleanCorpus)
+newsAsMatrix <- as.matrix(newsTDM)
 
 
 # Sum rows and frequency data frame
-chardonnay_term_freq <- rowSums(chardonnay_m)
+newsFreqTerms <- rowSums(newsAsMatrix)
 
-chardonnay_word_freqs <- data.frame(
-  term = names(chardonnay_term_freq),
-  num = chardonnay_term_freq
+newsWordsFreq <- data.frame(
+  term = names(newsFreqTerms),
+  num = newsFreqTerms
 )
 
-wordcloud(chardonnay_word_freqs$term, chardonnay_word_freqs$num,
+wordcloud(newsWordsFreq$term, newsWordsFreq$num,
           max.words = 100, colors = "#52a802") #69039c 
 
-################################# END Plot palabras en Emails ############################################################
+################################# END Plot palabras en Noticias ############################################################
 
 
 

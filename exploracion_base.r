@@ -22,6 +22,14 @@ library("stopwords")
 library("readtext")
 library("tm")
 library("wordcloud")
+library("wordcloud2")
+library("webshot")
+library("htmlwidgets")
+
+
+#webshot::install_phantomjs()
+
+
 
 ################################# Palabras en Emails ############################################################
 datosEmails <- read.csv("email headers.csv", sep = ",")
@@ -99,6 +107,7 @@ for(i in 1:nrow(newsDataFrame))
   newsDataFrame$source[i] <- str_remove(newsDataFrame$source[i], newsPath)
   newsDataFrame$source[i] <- str_remove(newsDataFrame$source[i], "/")
 }
+rm(i)
 glimpse(newsDataFrame)
 
 
@@ -121,54 +130,87 @@ newsSources
 # glimpse(AllNewsTodayFullText)
 # summary(AllNewsTodayFullText)
 
+newsSources
 
 
-newsDataFrame_AllNewsToday <- newsDataFrame %>% 
-  filter(source == "World Source")
+makeItCloud <- function(newsDataFrame, sourceFilter){
+  sourceFilter
+  filteredDataFrame <- newsDataFrame %>% 
+      filter(source == sourceFilter)
+  #glimpse(filteredDataFrame)
+  
+  newsStopWords <- c("")
+  newsStopWords <- c(stopwords_en, newsStopWords)
+  
+  frequent_terms_news <- freq_terms(filteredDataFrame$fullText, 35, stopwords = newsStopWords)
+  plot(frequent_terms_news)
+  
+  # Make a vector source
+  newsSource <- VectorSource(filteredDataFrame$fullText)
+  
+  # Make a volatile corpus
+  newsCorpus <- VCorpus(newsSource)
+  
+  # Clean the corpus
+  clean_corpus <- function(corpus){
+    corpus <- tm_map(corpus, stripWhitespace)
+    corpus <- tm_map(corpus, removePunctuation)
+    corpus <- tm_map(corpus, content_transformer(tolower))
+    corpus <- tm_map(corpus, removeWords, stopwords("en"))
+    return(corpus)
+  }
+  newsCleanCorpus <- clean_corpus(newsCorpus)
+  
+  # Convert TDM to matrix
+  newsTDM <- TermDocumentMatrix(newsCleanCorpus)
+  newsAsMatrix <- as.matrix(newsTDM)
+  
+  # Sum rows and frequency data frame
+  newsFreqTerms <- rowSums(newsAsMatrix)
+  
+  newsWordsFreq <- data.frame(
+    term = names(newsFreqTerms),
+    num = newsFreqTerms
+  )
+  glimpse(newsWordsFreq)
+  
+  newsWordsFreq <- newsWordsFreq %>% 
+    filter(num > 4)
+  
+  #newsWordCloud <- wordcloud(newsWordsFreq$term, newsWordsFreq$num,
+  #          max.words = 100, colors = "#52a802") #69039c 
+  
+  wordcloud(words = newsWordsFreq$term, freq = newsWordsFreq$num, min.freq = 1, max.words=50, random.order=FALSE, 
+            rot.per=0.35, colors=brewer.pal(4, "BrBG"))
+  
+  # wordcloud(words = newsWordsFreq$term, freq = newsWordsFreq$num, min.freq = 1, max.words=100, random.order=FALSE, 
+  #           rot.per=0.35, colors=brewer.pal(5, "RdYlGn"))
+  
+  
+  # 
+  # # Make the graph
+  # my_graph=wordcloud2(newsWordsFreq, size=0.5, minSize = sourceFilter, color = brewer.pal(8, "Dark2"), 
+  #                     minRotation = -pi/2, maxRotation = pi/2, shape = 'circle')
+  # # save it in html
+  # saveWidget(my_graph,"tmp.html",selfcontained = F)
+  # # and in png
+  # webshot("tmp.html","fig_1.png", delay =5, vwidth = 480, vheight=480) # changed to png. 
+}
+#newsWordCloud
 
-glimpse(newsDataFrame_AllNewsToday)
+# textFilter <- newsSources[1]
+# textFilter
+# makeItCloud(newsDataFrame,textFilter)
 
 
-newsStopWords <- c("")
-newsStopWords <- c(stopwords_en, newsStopWords)
-
-frequent_terms_news <- freq_terms(newsDataFrame_AllNewsToday$fullText, 35, stopwords = newsStopWords)
-plot(frequent_terms_news)
-
-
-
-# Make a vector source
-newsSource <- VectorSource(newsDataFrame_AllNewsToday$fullText)
-
-# Make a volatile corpus
-newsCorpus <- VCorpus(newsSource)
-
-# Clean the corpus
-clean_corpus <- function(corpus){
-  corpus <- tm_map(corpus, stripWhitespace)
-  corpus <- tm_map(corpus, removePunctuation)
-  corpus <- tm_map(corpus, content_transformer(tolower))
-  corpus <- tm_map(corpus, removeWords, stopwords("en"))
-  return(corpus)
+for(i in 1:29) ###Purrr::map :(
+{
+  textFilter <- newsSources[i]
+  makeItCloud(newsDataFrame,textFilter)
 }
 
-newsCleanCorpus <- clean_corpus(newsCorpus)
 
-# Convert TDM to matrix
-newsTDM <- TermDocumentMatrix(newsCleanCorpus)
-newsAsMatrix <- as.matrix(newsTDM)
-
-
-# Sum rows and frequency data frame
-newsFreqTerms <- rowSums(newsAsMatrix)
-
-newsWordsFreq <- data.frame(
-  term = names(newsFreqTerms),
-  num = newsFreqTerms
-)
-
-wordcloud(newsWordsFreq$term, newsWordsFreq$num,
-          max.words = 100, colors = "#52a802") #69039c 
+help(wordcloud)
 
 ################################# END Plot palabras en Noticias ############################################################
 
